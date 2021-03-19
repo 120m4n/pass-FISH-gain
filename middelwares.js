@@ -17,7 +17,6 @@ const middelwares = {
             //el autor existe en el arreglo
             next();
         }else{
-            console.log('No existe autor');
           throw new ErrorHandler(404, "El autor No existe en el arreglo");  
         }
     },

@@ -3,7 +3,8 @@ const { handleError } = require('./error');
 const validarAutor = require('./middelwares').validarAutor;
 const validarLibro = require('./middelwares').validarLibro;
 
-const {findAutorById, findIndexById, Libro} = require('./funciones');
+const {findAutorById, findIndexById, findLibroById, findLibroIndexById, Libro} = require('./funciones');
+const {listOfIds, listOfLibrosIds} = require('./funciones');
 
 const app = express();
 const autores = require('./autores');
@@ -20,7 +21,10 @@ app.get('/autores', (req, res) => {
 
 app.post('/autores', (req, res) => {
     const autor = req.body;
-    autor.id = autores.length + 1;
+    
+    const indexs = listOfIds(autores);
+
+    autor.id = (indexs.length > 0 ) ? Math.max.apply(Math, indexs)+1 : 1   ;
     autores.push(autor);
     res.status(201);
     res.json(autor);
@@ -69,7 +73,10 @@ app.post('/autores/:id([0-9]+)/libros', validarAutor, (req, res) => {
     const {titulo, descripcion, anioPublicacion} = req.body;
     let autor = findAutorById(autores, id);
     let libros = autor.libros;
-    id_libro = libros.length + 1;
+    let indexs = listOfLibrosIds(libros);
+
+
+    id_libro = (indexs.length > 0 ) ? Math.max.apply(Math, indexs)+1 : 1   ;
 
     let libro = new Libro(id_libro, titulo, descripcion, anioPublicacion);
     
@@ -82,20 +89,50 @@ app.post('/autores/:id([0-9]+)/libros', validarAutor, (req, res) => {
 app.get('/autores/:id([0-9]+)/libros/:idLibro([0-9]+)', validarAutor, validarLibro, (req, res) => {
     let id = req.params.id;
     let idLibro = req.params.idLibro;
+    let autor = findAutorById(autores, id);
+    let libros = autor.libros;
+    let libro = findLibroById(libros, idLibro);
 
     
-    res.status(201);
-    res.json(`id: ${id}, idLibro: ${idLibro}`);
+    res.status(200);
+    res.json(libro);
 
 });
 
 
+app.put('/autores/:id([0-9]+)/libros/:idLibro([0-9]+)', validarAutor, validarLibro, (req, res) => {
+    let id = req.params.id;
+    let idLibro = req.params.idLibro;
+    let {titulo, descripcion, anioPublicacion} = req.body;
 
 
 
+    let autor = findAutorById(autores, id);
+    let libros = autor.libros;
+    let libro = findLibroById(libros, idLibro);
+
+    libro.titulo            =   titulo ? titulo : libro.titulo;
+    libro.descripcion       =   descripcion ? descripcion : libro.descripcion;
+    libro.anioPublicacion   =   anioPublicacion ? anioPublicacion : libro.anioPublicacion;
+
+    
+    res.status(201);
+    res.json(libro);
+
+});
 
 
+app.delete('/autores/:id([0-9]+)/libros/:idLibro([0-9]+)', validarAutor, validarLibro, (req, res) => {
+    let id = req.params.id;
+    let idLibro = req.params.idLibro;
 
+    let autor = findAutorById(autores, id);
+    let libros = autor.libros;
+    let idx = findLibroIndexById(libros, idLibro);
+
+    libros.splice(idx, 1);
+    res.json({message:`index: ${idx}  eleminado con exito `});
+});
 
 
 app.use((err, req, res, next) => {
